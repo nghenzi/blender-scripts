@@ -3,6 +3,10 @@ from bpy import data as D
 from bpy import context as C
 from mathutils import *
 from math import *
+import numpy as np 
+import matplotlib.pyplot as plt
+
+
 
 def deleteAllObjects():
     """    Deletes all objects in the current scene    """
@@ -48,6 +52,25 @@ set_camera()
 put_area_light()
 
 
+#####################
+
+def set_material_colors(obj, val, frame_num, cm=None):
+    # Create a new material for the object
+    mat = bpy.data.materials.new(name="ColorMat")
+    obj.data.materials.append(mat)
+    
+#    for i, val in enumerate(values):
+    if cm:
+        color = cm(val)
+    else:
+#    color = (val, val, val, 1.0) 
+        color = plt.cm.jet(val) 
+    
+    mat.diffuse_color = color
+
+
+
+ 
 
 ###########################################33
 
@@ -56,7 +79,11 @@ def generate_curve(i):
     curve_location = (0,0,i)
     desired_length = 12
     location = (0,0,0)
-    bpy.ops.curve.primitive_bezier_curve_add(location=curve_location)
+#    bpy.ops.curve.primitive_bezier_curve_add(location=curve_location)
+    bpy.ops.curve.primitive_nurbs_path_add(radius=1, enter_editmode=False, align='WORLD', 
+    location=(0, 0, i), scale=(1, 1, 1))
+    
+
     curve_obj = bpy.context.active_object
     curve_obj.name = curve_name
 
@@ -97,7 +124,7 @@ def generate_curve(i):
 
     cube_node = node_tree.nodes.new("GeometryNodeMeshCube")
     cube_node.location = (-300, -200)
-    cube_node.inputs[0].default_value = (0.05,0.01,0.01) # size of cube... 
+    cube_node.inputs[0].default_value = (0.05,0.05,0.05) # size of cube... 
 
     #capture_attribute = node_tree.nodes.new("GeometryNodeCaptureAttribute")
     #capture_attribute.location = (-100,100)
@@ -117,6 +144,17 @@ def generate_curve(i):
 
     euler = node_tree.nodes.new("FunctionNodeAlignEulerToVector")
     euler.location = (500, -189)
+
+
+
+    store_color = node_tree.nodes.new("GeometryNodeStoreNamedAttribute")  
+    store_color.location = (0,200)
+    store_color.data_type = 'FLOAT_COLOR'
+    store_color.domain = 'FACE'
+    store_color.inputs[3].default_value = (0.265654, 0.333429, 0.592842, 1)
+
+    
+    node_tree.links.new(cube_node.outputs[0],store_color.inputs[0])
 
     node_tree.links.new(group_input.outputs[0],resample_node.inputs[0])
     node_tree.links.new(resample_node.outputs[0],join_geometry.inputs[0])
@@ -146,6 +184,12 @@ def generate_curve(i):
 
     #bpy.data.node_groups["Resample_Curve_Tree.157"].nodes["Align Euler to Vector"].axis = 'X'
 
+    set_material_colors(curve_obj, np.random.rand(), 20, plt.cm.jet)    
 
+
+
+    
 for i in range(10):
-    generate_curve(i*.1)
+    generate_curve(i*1)
+    
+    print ('fff')
